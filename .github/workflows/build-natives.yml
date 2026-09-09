@@ -236,6 +236,6 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           mv release/OC-JNLua-Natives-*.jar release/OC-JNLua-Natives.jar
-          sha256sum release/OC-JNLua-Natives.jar > release/OC-JNLua-Natives-SHA256SUMS.txt
+          (cd release && sha256sum OC-JNLua-Natives.jar > OC-JNLua-Natives-SHA256SUMS.txt)
           gh release create "$RELEASE_TAG" --generate-notes --title "OC-JNLua natives $RELEASE_TAG" || true
           gh release upload "$RELEASE_TAG" --clobber release/OC-JNLua-Natives.jar release/OC-JNLua-Natives-SHA256SUMS.txt
