@@ -1,4 +1,4 @@
-project('OC-Natives', 'c')
+project('OC-Natives', 'c', 'java')
 compiler = meson.get_compiler('c')
 
 lua52_sources = [
