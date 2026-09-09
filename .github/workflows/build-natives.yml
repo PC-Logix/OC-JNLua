@@ -60,9 +60,9 @@ jobs:
           set -e
           if [ "$status" -ne 0 ]; then
             if [ -f native/build-ci/meson-logs/meson-log.txt ]; then
-              tail -n 120 native/build-ci/meson-logs/meson-log.txt >> native/build.log
+              tail -n 40 native/build-ci/meson-logs/meson-log.txt >> native/build.log
             fi
-            echo "::error title=Native build log tail (base64)::$(tail -n 120 native/build.log | base64 --wrap=0)"
+            echo "::error title=Native build log tail (base64)::$(tail -n 40 native/build.log | base64 --wrap=0)"
             while IFS= read -r line; do
               echo "::error title=Native build output::$line"
             done < <(tail -n 80 native/build.log)
@@ -141,9 +141,9 @@ jobs:
           set -e
           if [ "$status" -ne 0 ]; then
             if [ -f native/build-ci/meson-logs/meson-log.txt ]; then
-              tail -n 120 native/build-ci/meson-logs/meson-log.txt >> native/build.log
+              tail -n 40 native/build-ci/meson-logs/meson-log.txt >> native/build.log
             fi
-            echo "::error title=Native build log tail (base64)::$(tail -n 120 native/build.log | base64 --wrap=0)"
+            echo "::error title=Native build log tail (base64)::$(tail -n 40 native/build.log | base64 --wrap=0)"
             while IFS= read -r line; do
               echo "::error title=Native build output::$line"
             done < <(tail -n 80 native/build.log)
