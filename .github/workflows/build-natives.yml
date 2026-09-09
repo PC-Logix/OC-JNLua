@@ -52,6 +52,7 @@ jobs:
           status=${PIPESTATUS[0]}
           set -e
           if [ "$status" -ne 0 ]; then
+            echo "::error title=Native build log (base64)::$(base64 --wrap=0 native/build.log)"
             while IFS= read -r line; do
               echo "::error title=Native build output::$line"
             done < <(tail -n 80 native/build.log)
