@@ -59,6 +59,9 @@ jobs:
           status=${PIPESTATUS[0]}
           set -e
           if [ "$status" -ne 0 ]; then
+            if [ -f native/build-ci/meson-logs/meson-log.txt ]; then
+              tail -n 120 native/build-ci/meson-logs/meson-log.txt >> native/build.log
+            fi
             echo "::error title=Native build log tail (base64)::$(tail -n 120 native/build.log | base64 --wrap=0)"
             while IFS= read -r line; do
               echo "::error title=Native build output::$line"
@@ -132,7 +135,20 @@ jobs:
           export PATH="/mingw32/bin:$PATH"
           export JAVA_HOME="$(cygpath "$JAVA_HOME")"
           chmod +x native/build-target.sh
-          OUTPUT_DIR="native/build-output/${{ matrix.target }}" ./native/build-target.sh "native/cross/${{ matrix.target }}.ini"
+          set +e
+          OUTPUT_DIR="native/build-output/${{ matrix.target }}" ./native/build-target.sh "native/cross/${{ matrix.target }}.ini" 2>&1 | tee native/build.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            if [ -f native/build-ci/meson-logs/meson-log.txt ]; then
+              tail -n 120 native/build-ci/meson-logs/meson-log.txt >> native/build.log
+            fi
+            echo "::error title=Native build log tail (base64)::$(tail -n 120 native/build.log | base64 --wrap=0)"
+            while IFS= read -r line; do
+              echo "::error title=Native build output::$line"
+            done < <(tail -n 80 native/build.log)
+            exit "$status"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.target }}
