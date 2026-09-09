@@ -2,5 +2,5 @@
 if [[ "$*" == *"-Wl,--version"* ]]; then
 	echo "LLD 15.0.7 (compatible with GNU linkers)"
 else
-	zig cc -target x86-linux-gnu "$@"
+	zig cc -target i386-linux-gnu "$@"
 fi
