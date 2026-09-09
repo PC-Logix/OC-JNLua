@@ -1,6 +1,2 @@
 #!/usr/bin/env bash
-if [[ "$*" == *"-Wl,--version"* ]]; then
-	echo "LLD 15.0.7 (compatible with GNU linkers)"
-else
-	zig cc -m32 "$@"
-fi
+exec zig cc -m32 "$@"
