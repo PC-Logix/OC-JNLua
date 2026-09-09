@@ -11,7 +11,7 @@ output_dir="${OUTPUT_DIR:-native/build-output}"
 rm -rf "$build_dir"
 mkdir -p "$output_dir"
 
-meson_args=(setup "$build_dir" "$source_dir" -Dbuildtype=release -Db_lto=true -Duse_local_jni=true)
+meson_args=(setup "$build_dir" "$source_dir" -Dbuildtype=release -Db_lto=false -Duse_local_jni=true)
 if [[ -n "$cross_file" ]]; then
   meson_args+=(--cross-file "$cross_file")
 fi
