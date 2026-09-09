@@ -18,6 +18,14 @@ It uses the JDK installed on each build host for JNI headers. This preserves a
 reviewable source-to-artifact chain and avoids treating a prebuilt JNI bundle
 as a build input of unknown provenance.
 
+### OC-Eris source provenance
+
+The native sources are the pinned `PC-Logix/OC-Eris` submodules in this
+repository: Lua 5.2 uses `master`, Lua 5.3 uses `master-lua5.3`, and Lua 5.4
+uses `master-lua5.4`. Git records the exact commit for every native release;
+the workflow compiles those commits and publishes a SHA-256 checksum beside
+the JAR for consumers to verify before embedding it.
+
 ## Legacy all-target local build
 
 The historical script below uses a preassembled JNI dependency archive and is
