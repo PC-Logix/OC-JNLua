@@ -2,5 +2,5 @@
 if [[ "$*" == *"-Wl,--version"* ]]; then
   echo "GNU ld (GNU Binutils) 2.40"
 else
-  exec zig cc -m32 "$@"
+  exec zig cc -m32 "$@" -fno-lto
 fi
