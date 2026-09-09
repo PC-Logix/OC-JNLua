@@ -80,7 +80,7 @@ jobs:
 
   macos:
     name: macOS ${{ matrix.target }}
-    runs-on: macos-13
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
@@ -138,6 +138,9 @@ jobs:
         run: |
           export PATH="/mingw32/bin:$PATH"
           export JAVA_HOME="$(cygpath "$JAVA_HOME")"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          java -version
+          javac -version
           chmod +x native/build-target.sh
           set +e
           OUTPUT_DIR="native/build-output/${{ matrix.target }}" ./native/build-target.sh "native/cross/${{ matrix.target }}.ini" 2>&1 | tee native/build.log
