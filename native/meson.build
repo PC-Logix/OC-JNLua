@@ -137,7 +137,8 @@ jnlua_sources += ['src/liolib_none.c']
 jnlua_sources += ['src/loadlib_none.c']
 
 add_project_arguments('-fno-strict-aliasing', language: 'c')
-add_project_arguments('-std=c17', language: 'c')
+add_project_arguments('-std=gnu17', language: 'c')
+add_project_arguments('-Wno-error=incompatible-pointer-types', language: 'c')
 add_project_arguments('-D_REENTRANT', language: 'c')
 if host_machine.system() == 'linux'
 	add_project_arguments('-DLUA_USE_LINUX', language: 'c')
