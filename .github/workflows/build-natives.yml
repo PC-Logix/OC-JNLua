@@ -233,10 +233,26 @@ jobs:
           path: release
       - name: Publish checksummed native JAR
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
+          set -euo pipefail
           mv release/OC-JNLua-Natives-*.jar release/OC-JNLua-Natives.jar
           (cd release && sha256sum OC-JNLua-Natives.jar > OC-JNLua-Natives-SHA256SUMS.txt)
-          gh release create "$RELEASE_TAG" --generate-notes --title "OC-JNLua natives $RELEASE_TAG" || true
-          gh release upload "$RELEASE_TAG" --clobber release/OC-JNLua-Natives.jar release/OC-JNLua-Natives-SHA256SUMS.txt
+          release_json="$(curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $GITHUB_TOKEN" \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            --data "{\"tag_name\":\"$RELEASE_TAG\",\"name\":\"OC-JNLua natives $RELEASE_TAG\",\"generate_release_notes\":true}" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/releases")"
+          upload_url="$(printf '%s' "$release_json" | jq -r '.upload_url' | sed 's/{?name,label}//')"
+          test -n "$upload_url" && test "$upload_url" != null
+          for asset in release/OC-JNLua-Natives.jar release/OC-JNLua-Natives-SHA256SUMS.txt; do
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer $GITHUB_TOKEN" \
+              --header 'Content-Type: application/octet-stream' \
+              --data-binary "@$asset" \
+              "$upload_url?name=$(basename "$asset")" >/dev/null
+          done
