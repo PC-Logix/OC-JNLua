@@ -6,7 +6,23 @@
     $ cd build
     $ meson compile
 
-## Building the natives set
+## Reproducible release builds
+
+The supported release path is the public `Build native libraries` GitHub
+Actions workflow. It builds the native libraries on hosted Linux, Windows,
+macOS, and FreeBSD environments, publishes the exact resulting JAR as a
+workflow artifact, and writes a SHA-256 checksum alongside it.
+
+The workflow does not consume the historical `jdk-jni-deps.tar.xz` bundle.
+It uses the JDK installed on each build host for JNI headers. This preserves a
+reviewable source-to-artifact chain and avoids treating a prebuilt JNI bundle
+as a build input of unknown provenance.
+
+## Legacy all-target local build
+
+The historical script below uses a preassembled JNI dependency archive and is
+kept only for compatibility. Do not use it for a release intended to provide
+auditable source-to-binary provenance; use the GitHub Actions workflow above.
 
 1. Install mingw-w64 (for both i686 and x86_64), Meson, Zig.
 2. Download and unpack [jdk-jni-deps.tar.xz](https://asie.pl/files/jdk-jni-deps.tar.xz). The archive contains about 100MB of JNI library dependencies, which are too big to store in a Git repository and don't exactly need versioning.

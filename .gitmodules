@@ -1,9 +1,9 @@
 [submodule "native/lua52"]
 	path = native/lua52
-	url = https://github.com/MightyPirates/OC-Eris
+	url = https://github.com/PC-Logix/OC-Eris
 [submodule "native/lua53"]
 	path = native/lua53
-	url = https://github.com/MightyPirates/OC-Eris
+	url = https://github.com/PC-Logix/OC-Eris
 [submodule "native/lua54"]
 	path = native/lua54
-	url = https://github.com/MightyPirates/OC-Eris
+	url = https://github.com/PC-Logix/OC-Eris

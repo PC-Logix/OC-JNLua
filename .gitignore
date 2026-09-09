@@ -1,6 +1,10 @@
 # Gradle
 /.gradle
 /build
+/native/build-ci
+/native/build-all-tmp
+/native/build-all-out
+/native/build-output
 
 # Eclipse
 /.classpath

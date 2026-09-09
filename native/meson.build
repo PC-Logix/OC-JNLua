@@ -155,35 +155,42 @@ lib_suffix = '-' + host_machine.system() + '-' + host_machine.cpu_family()
 
 math_dep = compiler.find_library('m', required: true)
 if get_option('use_local_jni')
-	jni_dep = dependency('jni', version: '>= 1.8.0', modules: ['jvm'], required: true)
+	# Loading Java native methods only needs JNI headers. Linking libjvm is
+	# required exclusively for the optional JavaVM discovery implementation.
+	# Keeping the two dependencies separate lets CI cross-compile CPU variants
+	# without pretending that a host libjvm is compatible with the target.
+	jni_deps = [dependency('jni', version: '>= 1.8.0', required: true)]
+	if get_option('enable_javavm')
+		jni_deps += dependency('jni', version: '>= 1.8.0', modules: ['jvm'], required: true)
+	endif
 else
 	jni_include_dir = join_paths('jni', host_machine.system(), host_machine.cpu_family(), 'include')
 	jni_lib_dir = join_paths(meson.source_root(), 'jni', host_machine.system(), host_machine.cpu_family(), 'lib')
 	if host_machine.system() == 'windows'
 		jni_lib_file = join_paths(jni_lib_dir, 'jvm.dll')
-		jni_dep = declare_dependency(
+		jni_deps = [declare_dependency(
 			link_args: [jni_lib_file],
 			include_directories: include_directories(jni_include_dir)
-		)
+		)]
 	else
-		jni_dep = declare_dependency(
+		jni_deps = [declare_dependency(
 			link_args: ['-L' + jni_lib_dir, '-ljvm'],
 			include_directories: include_directories(jni_include_dir)
-		)
+		)]
 	endif
 endif
 
 native52_sources = lua52_sources
 native52_sources += jnlua_sources
-library('jnlua52' + lib_suffix, native52_sources, dependencies: [math_dep, jni_dep],
+library('jnlua52' + lib_suffix, native52_sources, dependencies: [math_dep] + jni_deps,
 	include_directories: include_directories('lua52/src', 'src'))
 
 native53_sources = lua53_sources
 native53_sources += jnlua_sources
-library('jnlua53' + lib_suffix, native53_sources, dependencies: [math_dep, jni_dep],
+library('jnlua53' + lib_suffix, native53_sources, dependencies: [math_dep] + jni_deps,
 	include_directories: include_directories('lua53/src', 'src'))
 
 native54_sources = lua54_sources
 native54_sources += jnlua_sources
-library('jnlua54' + lib_suffix, native54_sources, dependencies: [math_dep, jni_dep],
+library('jnlua54' + lib_suffix, native54_sources, dependencies: [math_dep] + jni_deps,
 	include_directories: include_directories('lua54/src', 'src'))

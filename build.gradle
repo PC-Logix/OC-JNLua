@@ -1,13 +1,17 @@
 apply plugin: 'java'
 
 archivesBaseName = 'OC-JNLua'
-version = '20230507.0'
+// Release automation supplies this value. Keeping it explicit in the artifact
+// name makes every published native bundle traceable to one workflow run.
+version = findProperty('nativeVersion') ?: '20260908.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 task nativesJar(type: Jar) {
 	baseName = 'OC-JNLua-Natives'
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
 
 	into('assets/opencomputers/lib') {
 		from('native/build-all-out') {

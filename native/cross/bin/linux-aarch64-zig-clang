@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 if [[ "$*" == *"-Wl,--version"* ]]; then
 	echo "LLD 15.0.7 (compatible with GNU linkers)"
 else
-	zig cc -target aarch64-linux-gnu.2.17 $@
+	zig cc -target aarch64-linux-gnu.2.17 "$@"
 fi
