@@ -1,6 +1,13 @@
 name: Build native libraries
 
 on:
+  workflow_call:
+    inputs:
+      native_version:
+        description: Version for the packaged native JAR
+        required: false
+        type: string
+        default: 20260908.0
   pull_request:
     paths:
       - 'native/**'
