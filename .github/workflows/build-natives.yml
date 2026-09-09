@@ -25,9 +25,17 @@ on:
         description: Version for the packaged native JAR
         required: true
         default: 20260908.0
+      publish_release:
+        description: Publish the packaged JAR and checksum as a GitHub Release
+        required: true
+        type: boolean
+        default: false
+      release_tag:
+        description: GitHub Release tag (required when publishing)
+        required: false
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: native-build-${{ github.workflow }}-${{ github.ref }}
@@ -207,3 +215,27 @@ jobs:
           name: OC-JNLua-Natives
           path: build/libs/OC-JNLua-Natives-*
           if-no-files-found: error
+
+  release:
+    name: Publish native release
+    needs: package
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate release inputs
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: test -n "$RELEASE_TAG"
+      - uses: actions/download-artifact@v4
+        with:
+          name: OC-JNLua-Natives
+          path: release
+      - name: Publish checksummed native JAR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          mv release/OC-JNLua-Natives-*.jar release/OC-JNLua-Natives.jar
+          sha256sum release/OC-JNLua-Natives.jar > release/OC-JNLua-Natives-SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" --generate-notes --title "OC-JNLua natives $RELEASE_TAG" || true
+          gh release upload "$RELEASE_TAG" --clobber release/OC-JNLua-Natives.jar release/OC-JNLua-Natives-SHA256SUMS.txt
