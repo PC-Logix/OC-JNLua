@@ -47,7 +47,16 @@ jobs:
         run: |
           chmod +x native/build-target.sh native/cross/bin/*
           export PATH="$GITHUB_WORKSPACE/native/cross/bin:$PATH"
-          OUTPUT_DIR="native/build-output/${{ matrix.target }}" ./native/build-target.sh "native/cross/${{ matrix.target }}.ini"
+          set +e
+          OUTPUT_DIR="native/build-output/${{ matrix.target }}" ./native/build-target.sh "native/cross/${{ matrix.target }}.ini" 2>&1 | tee native/build.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            while IFS= read -r line; do
+              echo "::error title=Native build output::$line"
+            done < <(tail -n 80 native/build.log)
+            exit "$status"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.target }}
