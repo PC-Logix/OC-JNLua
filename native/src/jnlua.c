@@ -247,14 +247,13 @@ static void* l_alloc_unchecked (void *ud, void *ptr, size_t osize, size_t nsize)
 		return realloc(ptr, nsize);
 	}
 }
-/* This custom allocator ensures a VM won't exceed its allowed memory use. */
+/* This custom allocator ensures a VM won't exceed its allowed memory use.
+   It must not call into Lua: stack reallocation temporarily stores stack
+   pointers as offsets while invoking the allocator. */
 static void* l_alloc_checked (void *ud, void *ptr, size_t osize, size_t nsize) {
 	JNIEnv *thread_env = getthreadenv();
-	lua_State *L = (lua_State*)ud;
-	jobject obj;
-	lua_setallocf(L, l_alloc_unchecked, NULL);
-	obj = getjavastate(L);
-	lua_setallocf(L, l_alloc_checked, L);
+	jobject obj = thread_env ? (*thread_env)->NewLocalRef(thread_env, (jweak)ud) : NULL;
+	void *result;
 	if (obj) {
 		/* We have a Java state, enforce memory control. */
 		jint total = 0, used = 0;
@@ -263,7 +262,7 @@ static void* l_alloc_checked (void *ud, void *ptr, size_t osize, size_t nsize) {
 			/* Free a block of memory. */
 			free(ptr);
 			setluamemory(thread_env, obj, used - osize);
-			return NULL;
+			result = NULL;
 		} else {
 			int delta;
 			if (ptr == NULL) {
@@ -274,17 +273,27 @@ static void* l_alloc_checked (void *ud, void *ptr, size_t osize, size_t nsize) {
 			/* Lua expects reduction to not fail, so we must allow that even if it
 			   exceeds our current memory cap. */
 			if (total <= 0 || delta <= 0 || total - used >= delta) {
-				setluamemory(thread_env, obj, used + delta);
-				return realloc(ptr, nsize);
+				result = realloc(ptr, nsize);
+				if (result) {
+					setluamemory(thread_env, obj, used + delta);
+				}
 			} else {
-				return NULL;
+				result = NULL;
 			}
 		}
+		(*thread_env)->DeleteLocalRef(thread_env, obj);
+		return result;
 	}
-	else {
-		/* State was cleaned up on the Java side, fall back to default. */
-		return l_alloc_unchecked(ud, ptr, osize, nsize);
-	}
+	/* State was cleaned up on the Java side, or the thread is not attached. */
+	return l_alloc_unchecked(ud, ptr, osize, nsize);
+}
+/* Stop using the Java memory limit before closing the Lua state. The weak
+   reference remains valid until lua_close has finished freeing its memory. */
+static jweak unset_checked_allocator (lua_State *L) {
+	void *ud = NULL;
+	lua_Alloc alloc = lua_getallocf(L, &ud);
+	lua_setallocf(L, l_alloc_unchecked, NULL);
+	return alloc == l_alloc_checked ? (jweak)ud : NULL;
 }
 static lua_State *controlled_newstate (JNIEnv *env, jobject obj) {
 	lua_State *L = luaL_newstate();
@@ -292,7 +301,12 @@ static lua_State *controlled_newstate (JNIEnv *env, jobject obj) {
 		jint total = 0, used = 0;
 		getluamemory(env, obj, &total, &used);
 		if (total > 0) {
-			lua_setallocf(L, l_alloc_checked, L);
+			jweak ref = (*env)->NewWeakGlobalRef(env, obj);
+			if (!ref) {
+				lua_close(L);
+				return NULL;
+			}
+			lua_setallocf(L, l_alloc_checked, ref);
 		}
 	}
 	return L;
@@ -324,9 +338,10 @@ JNIEXPORT void JNICALL JNI_LUASTATE_METHOD(lua_1newstate) (JNIEnv *env, jobject 
 	}
 	if ((*env)->ExceptionCheck(env)) {
 		if (!existing) {
-			lua_setallocf(L, l_alloc_unchecked, NULL);
+			jweak ref = unset_checked_allocator(L);
 			setluamemory(env, obj, 0);
 			lua_close(L);
+			if (ref) (*env)->DeleteWeakGlobalRef(env, ref);
 		}
 		return;
 	}
@@ -359,9 +374,10 @@ JNIEXPORT void JNICALL JNI_LUASTATE_METHOD(lua_1close) (JNIEnv *env, jobject obj
 		setluathread(env, obj, NULL);
 		
 		/* Close Lua state. */
-		lua_setallocf(L, l_alloc_unchecked, NULL);
+		jweak ref = unset_checked_allocator(L);
 		setluamemory(env, obj, 0);
 		lua_close(L);
+		if (ref) (*env)->DeleteWeakGlobalRef(env, ref);
 	} else {
 		/* Can close? */
 		if (!lua_checkstack(L, JNLUA_MINSTACK)) {
